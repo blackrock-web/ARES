@@ -1,0 +1,6 @@
+{
+  "name": "ARES Steganography Benchmark",
+  "description": "Universal-condition image steganography research framework and live benchmark comparing ARES-Hybrid-INN with scientific paper baselines.",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}
