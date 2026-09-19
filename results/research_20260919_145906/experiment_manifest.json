@@ -1,0 +1,56 @@
+{
+  "experiment_id": "research_20260919_145906",
+  "category": "FINAL_TEST",
+  "split": "test",
+  "resolution": 256,
+  "n_images": 6,
+  "n_models": 5,
+  "model_ids": [
+    "paper_model_01",
+    "paper_model_02",
+    "paper_model_03",
+    "paper_model_04",
+    "ares_hybrid_inn"
+  ],
+  "secret_id": "fixed_v1",
+  "secret_bits": 240,
+  "environment": {
+    "python": "3.12.3",
+    "platform": "Linux-6.12.8+-x86_64-with-glibc2.39",
+    "pytorch": "2.12.0+cu130",
+    "cuda_available": false,
+    "gpu": null,
+    "timestamp": "2026-09-19T14:59:12.405623Z"
+  },
+  "dataset_manifest_sha256": "3a0229c154ff895d2b769a935cee1669ce1a7bec3035a84bd4b1a2ea993a535d",
+  "availability": {
+    "coco": {
+      "available": false,
+      "n_images": 0,
+      "path": "/home/workdir/artifacts/ARES-Upgraded/datasets/coco",
+      "reason": "not found under datasets/coco"
+    },
+    "div2k": {
+      "available": false,
+      "n_images": 0,
+      "path": "/home/workdir/artifacts/ARES-Upgraded/datasets/div2k",
+      "reason": "not found under datasets/div2k"
+    },
+    "celeba": {
+      "available": false,
+      "n_images": 0,
+      "path": "/home/workdir/artifacts/ARES-Upgraded/datasets/celeba",
+      "reason": "UNAVAILABLE \u2014 place images under datasets/celeba/ (Google Drive quota may block automatic download)",
+      "status_label": "UNAVAILABLE"
+    },
+    "bossbase": {
+      "available": false,
+      "n_images": 0,
+      "path": "/home/workdir/artifacts/ARES-Upgraded/datasets/bossbase",
+      "reason": "not found under datasets/bossbase"
+    }
+  },
+  "invalid_metrics": [],
+  "metric_version": "research_metrics_v1",
+  "note": "PSNR values are measured, not targets. Pilot 75/81 dB must be re-validated here."
+}

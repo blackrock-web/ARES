@@ -1,0 +1,10 @@
+{
+  "name": "ARES-Steg-Q-Upgraded",
+  "version": 3,
+  "max_bpp": 1,
+  "ecc_mode": "HEADER_REP3",
+  "adaptive_embedding": true,
+  "residual": "cnn_or_classical",
+  "crypto": "AES-GCM + QRNG + BB84-style key strengthen",
+  "checkpoint": "proposed_model.pt"
+}

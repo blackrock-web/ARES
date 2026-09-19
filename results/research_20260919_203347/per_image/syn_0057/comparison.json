@@ -1,0 +1,35 @@
+{
+  "image_id": "syn_0057",
+  "models": {
+    "paper_model_01": {
+      "psnr": 68.7419,
+      "ssim": 0.999991,
+      "exact_recovery": true,
+      "lsb_change_percent": 0.8687
+    },
+    "paper_model_02": {
+      "psnr": 67.1083,
+      "ssim": 0.999986,
+      "exact_recovery": true,
+      "lsb_change_percent": 1.2655
+    },
+    "paper_model_03": {
+      "psnr": 68.5045,
+      "ssim": 0.99999,
+      "exact_recovery": true,
+      "lsb_change_percent": 0.9176
+    },
+    "paper_model_04": {
+      "psnr": 69.0365,
+      "ssim": 0.999991,
+      "exact_recovery": true,
+      "lsb_change_percent": 0.8118
+    },
+    "ares_hybrid_inn": {
+      "psnr": 69.376,
+      "ssim": 0.999992,
+      "exact_recovery": true,
+      "lsb_change_percent": 0.7507
+    }
+  }
+}

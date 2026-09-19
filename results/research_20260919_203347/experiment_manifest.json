@@ -1,0 +1,56 @@
+{
+  "experiment_id": "research_20260919_203347",
+  "category": "FINAL_TEST",
+  "split": "test",
+  "resolution": 128,
+  "n_images": 10,
+  "n_models": 5,
+  "model_ids": [
+    "paper_model_01",
+    "paper_model_02",
+    "paper_model_03",
+    "paper_model_04",
+    "ares_hybrid_inn"
+  ],
+  "secret_id": "fixed_v1",
+  "secret_bits": 240,
+  "environment": {
+    "python": "3.11.9",
+    "platform": "Linux-7.0.12+kali-amd64-x86_64-with-glibc2.42",
+    "pytorch": "2.10.0+cu128",
+    "cuda_available": true,
+    "gpu": "NVIDIA GeForce RTX 3050 Laptop GPU",
+    "timestamp": "2026-09-19T15:03:48.549312Z"
+  },
+  "dataset_manifest_sha256": "eff2bb69bc91945476920412af7d7dc6e0750175cc0b0f1c40c706113695e84c",
+  "availability": {
+    "coco": {
+      "available": false,
+      "n_images": 0,
+      "path": "/home/s0751/Applications/ARES-Upgraded_FINAL/ARES-Hybrid-INN_Upgraded (2)/ARES-Upgraded/datasets/coco",
+      "reason": "not found under datasets/coco"
+    },
+    "div2k": {
+      "available": false,
+      "n_images": 0,
+      "path": "/home/s0751/Applications/ARES-Upgraded_FINAL/ARES-Hybrid-INN_Upgraded (2)/ARES-Upgraded/datasets/div2k",
+      "reason": "not found under datasets/div2k"
+    },
+    "celeba": {
+      "available": false,
+      "n_images": 0,
+      "path": "/home/s0751/Applications/ARES-Upgraded_FINAL/ARES-Hybrid-INN_Upgraded (2)/ARES-Upgraded/datasets/celeba",
+      "reason": "UNAVAILABLE \u2014 place images under datasets/celeba/ (Google Drive quota may block automatic download)",
+      "status_label": "UNAVAILABLE"
+    },
+    "bossbase": {
+      "available": false,
+      "n_images": 0,
+      "path": "/home/s0751/Applications/ARES-Upgraded_FINAL/ARES-Hybrid-INN_Upgraded (2)/ARES-Upgraded/datasets/bossbase",
+      "reason": "not found under datasets/bossbase"
+    }
+  },
+  "invalid_metrics": [],
+  "metric_version": "research_metrics_v1",
+  "note": "PSNR values are measured, not targets. Pilot 75/81 dB must be re-validated here."
+}

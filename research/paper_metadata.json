@@ -1,0 +1,92 @@
+{
+  "papers": [
+    {
+      "id": "P1",
+      "model_slot": "paper_model_01",
+      "title": "Robust and secure image steganography with recurrent neural network and fuzzy logic integration",
+      "authors": "R. Kanimozhi & V. Padmavathi",
+      "year": 2025,
+      "venue": "Scientific Reports",
+      "doi": "10.1038/s41598-025-97795-6",
+      "architecture": "RNN + Fuzzy logic + LSB/PVD/EMD",
+      "embedding": "Block-based PVD/EMD with fuzzy selection and recurrent refinement",
+      "payload": "Text/image via adaptive spatial embedding",
+      "reported_metrics": {"PSNR": "up to 63 dB", "MSE": "as low as 0.016"},
+      "official_weights": false,
+      "our_status": "REPRODUCED/TRAINED",
+      "limitations": "Fuzzy rules hand-crafted; boundary safety issues in original; RNN weights not public"
+    },
+    {
+      "id": "P2",
+      "model_slot": "paper_model_02",
+      "title": "A deep learning-driven multi-layered steganographic approach for enhanced data security",
+      "authors": "Yousef Sanjalawe, Salam Al-E'mari, Salam Fraihat, Mosleh Abualhaj & Emran Alzubi",
+      "year": 2025,
+      "venue": "Scientific Reports",
+      "doi": "10.1038/s41598-025-89189-5",
+      "architecture": "Huffman coding + LSB + deep learning encoder-decoder",
+      "embedding": "Multi-layer: compression then LSB then DL residual",
+      "payload": "Text with Huffman; image via encoder-decoder",
+      "reported_metrics": {"SSIM": ">0.99", "text_recovery": "100% under standard conditions"},
+      "official_weights": false,
+      "our_status": "REPRODUCED/TRAINED",
+      "limitations": "DL encoder-decoder weights not released; Huffman overhead for small payloads"
+    },
+    {
+      "id": "P3",
+      "model_slot": "paper_model_03",
+      "title": "A novel and efficient digital image steganography technique using least significant bit substitution",
+      "authors": "Shahid Rahman et al.",
+      "year": 2025,
+      "venue": "Scientific Reports",
+      "doi": "10.1038/s41598-024-83147-3",
+      "architecture": "LSB + Magic Matrix + MLEA + transposition/flip",
+      "embedding": "Keyed LSB with magic-matrix pixel order",
+      "payload": "Text via multi-level encryption then LSB",
+      "reported_metrics": {"high PSNR/SSIM on RGB covers"},
+      "official_weights": false,
+      "our_status": "REPRODUCED/TRAINED",
+      "limitations": "Primarily 1-LSB; limited adaptive capacity"
+    },
+    {
+      "id": "P4",
+      "model_slot": "paper_model_04",
+      "title": "DL-Steg: a deep learning-based steganography model for improving image security",
+      "authors": "Ahd Aljarf & Yasmeen Rashidi",
+      "year": 2025,
+      "venue": "Journal of Umm Al-Qura University for Engineering and Architecture",
+      "doi": "10.1007/s43995-025-00266-2",
+      "architecture": "Stacked Autoencoder + LSTM + ECC",
+      "embedding": "ECC encrypt then SAE-LSTM encode into cover",
+      "payload": "Secret image; reported 24 bpp",
+      "reported_metrics": {"PSNR": 45.5940, "SSIM": 0.9877, "MSE": 0.143, "bpp": 24},
+      "official_weights": false,
+      "our_status": "REPRODUCED/TRAINED",
+      "limitations": "Neural weights not supplied; 24 bpp claim is extreme and not independently verified"
+    },
+    {
+      "id": "P5",
+      "model_slot": "paper_model_05",
+      "title": "A multi-image steganography: ISS",
+      "authors": "Shihao Zhang, Yanhui Xiao, Huawei Tian & Xiaolong Li",
+      "year": 2025,
+      "venue": "Cybersecurity",
+      "doi": "10.1186/s42400-024-00333-6",
+      "architecture": "Image Stitching Sender + Genetic Algorithm payload distribution",
+      "embedding": "Multi-cover stitching optimized by GA with PSNR fitness",
+      "payload": "Distributed across multiple covers",
+      "reported_metrics": {"improved anti-detection vs UPD/IMS/ES-DD"},
+      "official_weights": false,
+      "our_status": "REPRODUCED/TRAINED",
+      "limitations": "Designed for multi-image; single-image mode is a reduced path"
+    }
+  ],
+  "proposed": {
+    "id": "proposed",
+    "name": "ARES-Steg-Q",
+    "full_name": "Attention-Residual Encrypted Steganography with Quantum-Inspired Security",
+    "architecture": "AES-GCM + QRNG/BB84 key strengthening + keyed multi-bit LSB + HiDDeN-style residual CNN",
+    "status": "TRAINED",
+    "weights": "models/proposed/proposed_model.pt"
+  }
+}

@@ -1,0 +1,35 @@
+{
+  "secret_default": "ARES-Q secure payload v1.",
+  "password": "benchmark-key-2025",
+  "image_size": 256,
+  "random_seed": 42,
+  "weights": {
+    "PSNR": 0.08,
+    "SSIM": 0.08,
+    "MS_SSIM": 0.08,
+    "LPIPS": 0.08,
+    "MSE": 0.08,
+    "Payload_Capacity_bpp": 0.05,
+    "Secret_Recovery_Accuracy": 0.2,
+    "Robustness": 0.2,
+    "Inference_Time_ms": 0.05,
+    "Steganalysis_Detectability": 0.1
+  },
+  "higher_is_better": [
+    "PSNR",
+    "SSIM",
+    "MS_SSIM",
+    "Payload_Capacity_bpp",
+    "Secret_Recovery_Accuracy",
+    "Robustness",
+    "FPS"
+  ],
+  "lower_is_better": [
+    "LPIPS",
+    "MSE",
+    "Inference_Time_ms",
+    "Steganalysis_Detectability"
+  ],
+  "tie_tolerance": 0.01,
+  "weight_rationale": "Security-oriented profile: exact recovery (20%) and attack robustness (20%) are primary for confidential communication; perceptual quality metrics share 40%; detectability 10%; capacity and speed 5% each. Set before final runs."
+}

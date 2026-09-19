@@ -1,0 +1,23 @@
+{
+  "profile": "security_oriented",
+  "weights": {
+    "PSNR": 0.08,
+    "SSIM": 0.08,
+    "MS_SSIM": 0.08,
+    "LPIPS": 0.08,
+    "MSE": 0.08,
+    "Payload_Capacity_bpp": 0.05,
+    "Secret_Recovery_Accuracy": 0.20,
+    "Robustness": 0.20,
+    "Inference_Time_ms": 0.05,
+    "Steganalysis_Detectability": 0.10
+  },
+  "higher_is_better": ["PSNR","SSIM","MS_SSIM","Payload_Capacity_bpp","Secret_Recovery_Accuracy","Robustness","FPS"],
+  "lower_is_better": ["LPIPS","MSE","Inference_Time_ms","Steganalysis_Detectability"],
+  "security_gate": {
+    "enabled": true,
+    "formula": "0.55 + 0.45 * normalized_robustness",
+    "rationale": "Confidential stego requires attack recovery; zero-robustness models retain 55% of quality score."
+  },
+  "tie_tolerance": 0.01
+}

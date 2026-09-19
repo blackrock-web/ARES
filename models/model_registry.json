@@ -1,0 +1,103 @@
+{
+  "models": [
+    {
+      "id": "ares_hybrid_inn",
+      "name": "ARES-Hybrid-INN",
+      "type": "proposed",
+      "module": "models.hybrid.wrapper",
+      "class": "ARESHybridINNModel",
+      "weights": "models/hybrid/ares_hybrid_inn.pt",
+      "status": "PROPOSED",
+      "paper_id": null,
+      "supports_gpu": true,
+      "default_bpp": 1,
+      "ecc_modes": ["NONE", "HEADER_REP2", "HEADER_REP3", "FULL_REP2", "FULL_REP3"],
+      "architecture": "CNN + Invertible NN + Adaptive Minimum-LSB + Residual"
+    },
+    {
+      "id": "ares_upgraded",
+      "name": "ARES-Upgraded",
+      "type": "proposed",
+      "module": "models.upgraded.wrapper",
+      "class": "ARESUpgradedModel",
+      "weights": "models/upgraded/ares_upgraded.pt",
+      "status": "TRAINED",
+      "paper_id": null,
+      "supports_gpu": true,
+      "default_bpp": 1,
+      "ecc_modes": ["NONE", "HEADER_REP2", "HEADER_REP3", "FULL_REP2", "FULL_REP3"]
+    },
+    {
+      "id": "proposed",
+      "name": "ARES-Steg-Q (Legacy)",
+      "type": "proposed",
+      "module": "models.proposed.wrapper",
+      "class": "ProposedModel",
+      "weights": "models/proposed/proposed_model.pt",
+      "status": "TRAINED",
+      "paper_id": null,
+      "supports_gpu": true,
+      "default_bpp": 1
+    },
+    {
+      "id": "paper_model_01",
+      "name": "Kanimozhi RNN+Fuzzy (2025)",
+      "type": "paper",
+      "module": "models.paper_model_01.wrapper",
+      "class": "KanimozhiModel",
+      "weights": null,
+      "status": "REPRODUCED",
+      "paper_id": "P1",
+      "supports_gpu": false,
+      "default_bpp": 1
+    },
+    {
+      "id": "paper_model_02",
+      "name": "Sanjalawe Huffman+LSB+DL (2025)",
+      "type": "paper",
+      "module": "models.paper_model_02.wrapper",
+      "class": "SanjalaweModel",
+      "weights": null,
+      "status": "REPRODUCED",
+      "paper_id": "P2",
+      "supports_gpu": false,
+      "default_bpp": 1
+    },
+    {
+      "id": "paper_model_03",
+      "name": "Rahman LSB+MagicMatrix (2025)",
+      "type": "paper",
+      "module": "models.paper_model_03.wrapper",
+      "class": "RahmanModel",
+      "weights": null,
+      "status": "REPRODUCED",
+      "paper_id": "P3",
+      "supports_gpu": false,
+      "default_bpp": 1
+    },
+    {
+      "id": "paper_model_04",
+      "name": "Aljarf DL-Steg ECC+SAE (2025)",
+      "type": "paper",
+      "module": "models.paper_model_04.wrapper",
+      "class": "DLStegModel",
+      "weights": null,
+      "status": "REPRODUCED",
+      "paper_id": "P4",
+      "supports_gpu": false,
+      "default_bpp": 1
+    },
+    {
+      "id": "paper_model_05",
+      "name": "Zhang ISS Multi-Image (2025)",
+      "type": "paper",
+      "module": "models.paper_model_05.wrapper",
+      "class": "ISSModel",
+      "weights": null,
+      "status": "REPRODUCED",
+      "paper_id": "P5",
+      "supports_gpu": false,
+      "default_bpp": 1
+    }
+  ]
+}

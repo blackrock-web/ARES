@@ -1,0 +1,8 @@
+{
+  "python": "3.11.9",
+  "platform": "Linux-7.0.12+kali-amd64-x86_64-with-glibc2.42",
+  "pytorch": "2.10.0+cu128",
+  "cuda_available": true,
+  "gpu": "NVIDIA GeForce RTX 3050 Laptop GPU",
+  "timestamp": "2026-09-19T15:04:05.265569Z"
+}

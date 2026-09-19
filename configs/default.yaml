@@ -1,0 +1,70 @@
+# ARES-Upgraded default configuration
+model:
+  name: ARES-Upgraded
+  version: 4
+  base_channels: 32
+  max_bpp: 1
+  ecc_mode: HEADER_REP3
+  adaptive: true
+  residual: cnn_or_classical
+
+training:
+  lr: 1.0e-4
+  batch_size: 8
+  epochs: 50
+  size: 128
+  seed: 42
+  curriculum_stages: 5
+  lambdas:
+    mse: 1.0
+    l1: 0.5
+    ssim: 0.3
+    ms_ssim: 0.2
+    res: 0.1
+    secret: 0.5
+    adv: 0.05
+
+payload_rates:
+  - 0.05
+  - 0.10
+  - 0.20
+  - 0.30
+  - 0.40
+  - 0.50
+
+ecc_modes:
+  - NONE
+  - HEADER_REP2
+  - HEADER_REP3
+  - FULL_REP2
+  - FULL_REP3
+
+attacks:
+  - CLEAN
+  - JPEG95
+  - JPEG90
+  - JPEG80
+  - JPEG70
+  - JPEG50
+  - NOISE_G5
+  - BLUR_G1
+  - RESIZE_90
+  - CROP_90
+  - COMBINED_MOD
+
+evaluation:
+  metrics:
+    - PSNR
+    - SSIM
+    - MS_SSIM
+    - MSE
+    - BER
+    - Recovery
+    - Robustness
+    - Steganalysis_Detectability
+  statistical_tests: true
+  pareto: true
+
+reproducibility:
+  seed: 42
+  deterministic: true
