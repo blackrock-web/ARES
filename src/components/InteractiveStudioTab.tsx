@@ -1,5 +1,17 @@
 import React, { useState, useRef } from 'react';
-import { Sparkles, Lock, Unlock, Download, Upload, ShieldCheck, CheckCircle2, AlertCircle } from 'lucide-react';
+import {
+  Sparkles,
+  Lock,
+  Unlock,
+  Download,
+  Upload,
+  ShieldCheck,
+  CheckCircle2,
+  AlertCircle,
+  Clock,
+  FileCode,
+  FileText
+} from 'lucide-react';
 import {
   createSyntheticCover,
   embedSecret,
@@ -11,6 +23,7 @@ import {
   generateResidualDataUrl,
   generateLSBMapDataUrl
 } from '../utils/stegoEngine';
+import { ALL_MODEL_ADAPTERS } from '../utils/modelAdapters';
 
 export const InteractiveStudioTab: React.FC = () => {
   const [activeMode, setActiveMode] = useState<'EMBED' | 'EXTRACT'>('EMBED');
@@ -23,22 +36,34 @@ export const InteractiveStudioTab: React.FC = () => {
   const [stegoUrl, setStegoUrl] = useState<string>('');
   const [residualUrl, setResidualUrl] = useState<string>('');
   const [lsbMapUrl, setLsbMapUrl] = useState<string>('');
+  const [embedTimeMs, setEmbedTimeMs] = useState<number>(0);
   const [metrics, setMetrics] = useState<{
     psnr: number;
     ssim: number;
     mse: number;
     lsbChangePct: number;
     payloadBits: number;
+    payloadBytes: number;
+    capacityBytes: number;
     exactRecovery: boolean;
   } | null>(null);
 
   // Extract State
   const [extractInputUrl, setExtractInputUrl] = useState<string>('');
-  const [extractPassword, setExtractPassword] = useState<string>('ares-key-2025');
+  const [extractPassword, setExtractPassword] = useState<string>('');
   const [extractAlgorithm, setExtractAlgorithm] = useState<string>('ares_hybrid_inn');
-  const [extractedSecret, setExtractedSecret] = useState<{ text: string; success: boolean } | null>(null);
+  const [referencePayload, setReferencePayload] = useState<string>('');
+  const [extractedSecret, setExtractedSecret] = useState<{
+    text: string;
+    success: boolean;
+    decodeTimeMs: number;
+    exactMatch?: boolean;
+    payloadSize: number;
+    error?: string;
+  } | null>(null);
 
   const fileInputRef = useRef<HTMLInputElement>(null);
+  const payloadFileInputRef = useRef<HTMLInputElement>(null);
   const extractFileInputRef = useRef<HTMLInputElement>(null);
 
   // Run embedding
@@ -55,7 +80,10 @@ export const InteractiveStudioTab: React.FC = () => {
       coverData = ctx.getImageData(0, 0, 256, 256);
       setCoverUrl(canvas.toDataURL('image/png'));
 
+      const t0 = performance.now();
       const res = embedSecret(coverData, secretMessage, selectedAlgorithm, password);
+      const elapsed = performance.now() - t0;
+      setEmbedTimeMs(Math.round(elapsed * 100) / 100);
 
       const stegoCanvas = document.createElement('canvas');
       stegoCanvas.width = 256;
@@ -65,8 +93,8 @@ export const InteractiveStudioTab: React.FC = () => {
       const stegoDataUrl = stegoCanvas.toDataURL('image/png');
       setStegoUrl(stegoDataUrl);
 
-      // Extract input url auto-fill for quick testing
-      setExtractInputUrl(stegoDataUrl);
+      // Note: We DO NOT auto-fill extractInputUrl behind the scenes,
+      // ensuring user must independently provide the stego image for decryption!
 
       const mse = computeMSE(coverData, res.stegoImgData);
       const psnr = computePSNR(mse);
@@ -76,12 +104,17 @@ export const InteractiveStudioTab: React.FC = () => {
       setResidualUrl(generateResidualDataUrl(coverData, res.stegoImgData, 12.0));
       setLsbMapUrl(generateLSBMapDataUrl(res.stegoImgData));
 
+      const payloadBytes = new TextEncoder().encode(secretMessage).length;
+      const capacityBytes = Math.floor((256 * 256) / 8);
+
       setMetrics({
         psnr,
         ssim,
         mse,
         lsbChangePct: lsb.lsbChangePct,
         payloadBits: res.payloadBits,
+        payloadBytes,
+        capacityBytes,
         exactRecovery: res.exactRecovery
       });
     };
@@ -106,7 +139,7 @@ export const InteractiveStudioTab: React.FC = () => {
     }
   };
 
-  // Run extract
+  // Run independent extraction
   const handleExtract = () => {
     if (!extractInputUrl) return;
 
@@ -120,10 +153,42 @@ export const InteractiveStudioTab: React.FC = () => {
       ctx.drawImage(img, 0, 0);
       const imgData = ctx.getImageData(0, 0, img.width, img.height);
 
+      const t0 = performance.now();
       const result = extractSecret(imgData, extractAlgorithm, extractPassword);
-      setExtractedSecret(result);
+      const elapsed = performance.now() - t0;
+
+      const payloadSize = result.success ? new TextEncoder().encode(result.text).length : 0;
+      let exactMatch: boolean | undefined = undefined;
+
+      if (referencePayload.length > 0) {
+        // Exact verification check
+        exactMatch = result.success && result.text === referencePayload;
+      }
+
+      setExtractedSecret({
+        text: result.text,
+        success: result.success,
+        decodeTimeMs: Math.round(elapsed * 100) / 100,
+        exactMatch,
+        payloadSize,
+        error: result.success ? undefined : 'Header decoding or checksum validation failed with the provided passphrase.'
+      });
     };
     img.src = extractInputUrl;
+  };
+
+  // Upload file as payload
+  const handlePayloadFileUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    const reader = new FileReader();
+    reader.onload = (event) => {
+      const text = event.target?.result as string;
+      setSecretMessage(text);
+    };
+    reader.readAsText(file);
+    e.target.value = '';
   };
 
   // Initialize on first render
@@ -137,16 +202,16 @@ export const InteractiveStudioTab: React.FC = () => {
       <div className="bg-slate-900 border border-slate-800 rounded-xl p-5 shadow-sm">
         <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
           <div>
-            <h2 className="text-xl font-bold text-white tracking-tight flex items-center gap-2">
+            <h2 className="text-xl font-bold text-white tracking-tight flex items-center gap-2 font-mono">
               <Sparkles className="h-5 w-5 text-cyan-400" />
-              <span>Interactive Steganography Studio</span>
+              <span>Interactive Steganography Studio & Verification</span>
             </h2>
-            <p className="text-sm text-slate-400 mt-1">
-              Live in-browser encoding & decoding sandbox with instant fidelity calculations and difference map inspection.
+            <p className="text-xs text-slate-400 mt-1">
+              End-to-end real embedding pipeline with pixel difference visualization, and independent stego decryption with exact payload verification.
             </p>
           </div>
 
-          <div className="flex bg-slate-950 p-1 rounded-lg border border-slate-800 text-xs">
+          <div className="flex bg-slate-950 p-1 rounded-lg border border-slate-800 text-xs font-mono">
             <button
               onClick={() => setActiveMode('EMBED')}
               className={`flex items-center gap-1.5 px-3 py-1.5 rounded-md font-medium transition ${
@@ -167,7 +232,7 @@ export const InteractiveStudioTab: React.FC = () => {
               }`}
             >
               <Unlock className="h-3.5 w-3.5" />
-              Extract Secret
+              Decrypt Stego Image
             </button>
           </div>
         </div>
@@ -178,39 +243,59 @@ export const InteractiveStudioTab: React.FC = () => {
         <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
           {/* Controls */}
           <div className="lg:col-span-5 bg-slate-900 border border-slate-800 rounded-xl p-5 space-y-4">
-            <h3 className="text-sm font-semibold text-slate-200">
+            <h3 className="text-xs font-bold uppercase tracking-wider text-slate-200 font-mono">
               Steganographic Encoding Parameters
             </h3>
 
             {/* Secret message */}
             <div>
-              <label className="block text-xs font-medium text-slate-300 mb-1">
-                Secret Text Payload
-              </label>
+              <div className="flex items-center justify-between mb-1">
+                <label className="text-xs font-medium text-slate-300 font-mono">
+                  Secret Payload
+                </label>
+                <button
+                  type="button"
+                  onClick={() => payloadFileInputRef.current?.click()}
+                  className="text-[11px] text-cyan-400 hover:text-cyan-300 transition flex items-center gap-1"
+                >
+                  <FileText className="h-3 w-3" /> Upload File Payload
+                </button>
+                <input
+                  ref={payloadFileInputRef}
+                  type="file"
+                  className="hidden"
+                  onChange={handlePayloadFileUpload}
+                />
+              </div>
               <textarea
                 value={secretMessage}
                 onChange={(e) => setSecretMessage(e.target.value)}
                 rows={3}
                 className="w-full bg-slate-950 border border-slate-800 rounded-lg p-2.5 text-xs text-slate-100 font-mono focus:outline-none focus:border-cyan-500"
+                placeholder="Enter text payload..."
               />
+              <div className="text-[10px] text-slate-500 font-mono mt-1">
+                Payload Size: {new TextEncoder().encode(secretMessage).length} bytes ({new TextEncoder().encode(secretMessage).length * 8 + 32} bits with header)
+              </div>
             </div>
 
             {/* Password */}
             <div>
-              <label className="block text-xs font-medium text-slate-300 mb-1">
-                Encryption / Permutation Key
+              <label className="block text-xs font-medium text-slate-300 mb-1 font-mono">
+                Passphrase (Keyed Permutation)
               </label>
               <input
-                type="text"
+                type="password"
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
                 className="w-full bg-slate-950 border border-slate-800 rounded-lg p-2 text-xs text-slate-100 font-mono focus:outline-none focus:border-cyan-500"
+                placeholder="Enter passphrase..."
               />
             </div>
 
             {/* Algorithm */}
             <div>
-              <label className="block text-xs font-medium text-slate-300 mb-1">
+              <label className="block text-xs font-medium text-slate-300 mb-1 font-mono">
                 Steganography Algorithm
               </label>
               <select
@@ -218,10 +303,11 @@ export const InteractiveStudioTab: React.FC = () => {
                 onChange={(e) => setSelectedAlgorithm(e.target.value)}
                 className="w-full bg-slate-950 border border-slate-800 rounded-lg p-2 text-xs text-slate-100 font-mono focus:outline-none focus:border-cyan-500"
               >
-                <option value="ares_hybrid_inn">ARES-Hybrid-INN (Adaptive Minimum-LSB)</option>
-                <option value="paper_model_03">Rahman LSB + Magic Matrix Permutation</option>
-                <option value="paper_model_02">Sanjalawe Huffman + Sequential LSB</option>
-                <option value="paper_model_01">Kanimozhi RNN+Fuzzy Spatial LSB</option>
+                {ALL_MODEL_ADAPTERS.map((adapter) => (
+                  <option key={adapter.id} value={adapter.id}>
+                    {adapter.name} {adapter.type === 'proposed' ? '(Proposed)' : ''}
+                  </option>
+                ))}
               </select>
             </div>
 
@@ -230,10 +316,10 @@ export const InteractiveStudioTab: React.FC = () => {
               <button
                 type="button"
                 onClick={() => fileInputRef.current?.click()}
-                className="flex-1 py-2 px-3 rounded-lg border border-slate-700 bg-slate-800/80 hover:bg-slate-700 text-xs font-medium text-slate-300 flex items-center justify-center gap-1.5 transition"
+                className="flex-1 py-2 px-3 rounded-lg border border-slate-700 bg-slate-800/80 hover:bg-slate-700 text-xs font-medium text-slate-300 flex items-center justify-center gap-1.5 transition font-mono"
               >
                 <Upload className="h-3.5 w-3.5" />
-                Upload Cover
+                Upload Cover Image
               </button>
               <input
                 ref={fileInputRef}
@@ -253,9 +339,9 @@ export const InteractiveStudioTab: React.FC = () => {
               <button
                 type="button"
                 onClick={() => handleEmbed('procedural')}
-                className="py-2 px-3 rounded-lg border border-slate-700 bg-slate-800/80 hover:bg-slate-700 text-xs font-medium text-slate-300"
+                className="py-2 px-3 rounded-lg border border-slate-700 bg-slate-800/80 hover:bg-slate-700 text-xs font-medium text-slate-300 font-mono"
               >
-                Reset Cover
+                Procedural
               </button>
             </div>
 
@@ -263,7 +349,7 @@ export const InteractiveStudioTab: React.FC = () => {
             <button
               type="button"
               onClick={() => handleEmbed()}
-              className="w-full py-2.5 px-4 rounded-xl bg-cyan-600 hover:bg-cyan-500 text-white text-xs font-semibold shadow-md shadow-cyan-950 transition flex items-center justify-center gap-2"
+              className="w-full py-2.5 px-4 rounded-xl bg-cyan-600 hover:bg-cyan-500 text-slate-950 font-bold text-xs tracking-wide transition flex items-center justify-center gap-2 shadow-md shadow-cyan-950 font-mono"
             >
               <Lock className="h-4 w-4" />
               Embed & Compute Fidelity
@@ -274,46 +360,52 @@ export const InteractiveStudioTab: React.FC = () => {
           <div className="lg:col-span-7 space-y-4">
             {metrics && (
               <div className="bg-slate-900 border border-slate-800 rounded-xl p-5 space-y-4">
-                <div className="flex items-center justify-between">
-                  <h4 className="text-sm font-semibold text-white">
-                    Live Steganographic Evaluation
+                <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
+                  <h4 className="text-xs font-bold text-white uppercase tracking-wider font-mono">
+                    Live Steganographic Evaluation Metrics
                   </h4>
-                  {metrics.exactRecovery ? (
-                    <span className="flex items-center gap-1 px-2.5 py-0.5 rounded-full bg-emerald-500/10 text-emerald-400 border border-emerald-500/20 text-xs font-medium">
-                      <CheckCircle2 className="h-3.5 w-3.5" />
-                      100% Exact Recovery Verified
+                  <div className="flex items-center gap-2">
+                    <span className="text-[11px] font-mono text-slate-400 flex items-center gap-1">
+                      <Clock className="h-3 w-3 text-cyan-400" />
+                      {embedTimeMs} ms
                     </span>
-                  ) : (
-                    <span className="flex items-center gap-1 px-2.5 py-0.5 rounded-full bg-rose-500/10 text-rose-400 border border-rose-500/20 text-xs font-medium">
-                      <AlertCircle className="h-3.5 w-3.5" />
-                      Recovery Mismatch
-                    </span>
-                  )}
+                    {metrics.exactRecovery ? (
+                      <span className="flex items-center gap-1 px-2.5 py-0.5 rounded-full bg-emerald-500/10 text-emerald-400 border border-emerald-500/20 text-xs font-medium font-mono">
+                        <CheckCircle2 className="h-3.5 w-3.5" />
+                        Exact Recovery Verified
+                      </span>
+                    ) : (
+                      <span className="flex items-center gap-1 px-2.5 py-0.5 rounded-full bg-rose-500/10 text-rose-400 border border-rose-500/20 text-xs font-medium font-mono">
+                        <AlertCircle className="h-3.5 w-3.5" />
+                        Recovery Mismatch
+                      </span>
+                    )}
+                  </div>
                 </div>
 
                 <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
                   <div className="bg-slate-950 p-2.5 rounded-lg border border-slate-800">
-                    <div className="text-[11px] text-slate-400">PSNR</div>
-                    <div className="text-lg font-bold text-cyan-300 font-mono">
+                    <div className="text-[11px] text-slate-400 font-mono">PSNR (dB) ↑</div>
+                    <div className="text-base font-bold text-cyan-400 font-mono">
                       {metrics.psnr.toFixed(2)} dB
                     </div>
                   </div>
                   <div className="bg-slate-950 p-2.5 rounded-lg border border-slate-800">
-                    <div className="text-[11px] text-slate-400">SSIM</div>
-                    <div className="text-lg font-bold text-slate-100 font-mono">
+                    <div className="text-[11px] text-slate-400 font-mono">SSIM ↑</div>
+                    <div className="text-base font-bold text-slate-100 font-mono">
                       {metrics.ssim.toFixed(6)}
                     </div>
                   </div>
                   <div className="bg-slate-950 p-2.5 rounded-lg border border-slate-800">
-                    <div className="text-[11px] text-slate-400">MSE</div>
-                    <div className="text-lg font-bold text-slate-100 font-mono">
-                      {metrics.mse.toExponential(3)}
+                    <div className="text-[11px] text-slate-400 font-mono">MSE ↓</div>
+                    <div className="text-base font-bold text-slate-100 font-mono">
+                      {metrics.mse.toFixed(5)}
                     </div>
                   </div>
                   <div className="bg-slate-950 p-2.5 rounded-lg border border-slate-800">
-                    <div className="text-[11px] text-slate-400">LSB Changed</div>
-                    <div className="text-lg font-bold text-slate-100 font-mono">
-                      {metrics.lsbChangePct.toFixed(2)}%
+                    <div className="text-[11px] text-slate-400 font-mono">Payload Capacity</div>
+                    <div className="text-base font-bold text-slate-100 font-mono">
+                      {metrics.payloadBytes} / {metrics.capacityBytes} B
                     </div>
                   </div>
                 </div>
@@ -321,7 +413,7 @@ export const InteractiveStudioTab: React.FC = () => {
                 {/* Cover vs Stego vs Residual images */}
                 <div className="grid grid-cols-3 gap-3 pt-2">
                   <div className="space-y-1 text-center">
-                    <span className="text-[11px] text-slate-400 font-medium">Cover (Original)</span>
+                    <span className="text-[11px] text-slate-400 font-medium font-mono">Cover (Original)</span>
                     <img
                       src={coverUrl}
                       alt="Cover"
@@ -329,7 +421,7 @@ export const InteractiveStudioTab: React.FC = () => {
                     />
                   </div>
                   <div className="space-y-1 text-center">
-                    <span className="text-[11px] text-cyan-300 font-medium">Stego (Carrier)</span>
+                    <span className="text-[11px] text-cyan-300 font-medium font-mono">Stego (Carrier)</span>
                     <img
                       src={stegoUrl}
                       alt="Stego"
@@ -337,7 +429,7 @@ export const InteractiveStudioTab: React.FC = () => {
                     />
                   </div>
                   <div className="space-y-1 text-center">
-                    <span className="text-[11px] text-amber-300 font-medium">Residual (×12)</span>
+                    <span className="text-[11px] text-amber-300 font-medium font-mono">Residual (×12)</span>
                     <img
                       src={residualUrl}
                       alt="Residual"
@@ -350,7 +442,7 @@ export const InteractiveStudioTab: React.FC = () => {
                   <a
                     href={stegoUrl}
                     download="ares_stego_encoded.png"
-                    className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-slate-800 hover:bg-slate-700 text-slate-200 text-xs font-medium border border-slate-700"
+                    className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-slate-800 hover:bg-slate-700 text-slate-200 text-xs font-medium border border-slate-700 font-mono"
                   >
                     <Download className="h-3.5 w-3.5" />
                     Download Stego Image (PNG)
@@ -361,35 +453,51 @@ export const InteractiveStudioTab: React.FC = () => {
           </div>
         </div>
       ) : (
-        /* EXTRACT MODE */
+        /* EXTRACT MODE - Real Independent Decryption Workflow */
         <div className="max-w-2xl mx-auto bg-slate-900 border border-slate-800 rounded-xl p-6 space-y-5">
-          <h3 className="text-base font-semibold text-white flex items-center gap-2">
-            <Unlock className="h-4 w-4 text-cyan-400" />
-            Extract Secret Message from Stego Image
-          </h3>
+          <div className="flex items-center justify-between pb-3 border-b border-slate-800">
+            <div>
+              <h3 className="text-base font-bold text-white flex items-center gap-2 font-mono">
+                <Unlock className="h-4 w-4 text-cyan-400" />
+                Decryption & Payload Recovery Workflow
+              </h3>
+              <p className="text-xs text-slate-400 mt-0.5">
+                Upload any stego image and provide the decryption passphrase to test real payload recovery.
+              </p>
+            </div>
+          </div>
 
           <div className="space-y-4">
-            {/* Upload stego */}
+            {/* 1. Upload stego */}
             <div>
-              <label className="block text-xs font-medium text-slate-300 mb-1.5">
-                Stego Image
+              <label className="block text-xs font-semibold text-slate-300 uppercase tracking-wider mb-1.5 font-mono">
+                1. Upload Stego Image Carrier
               </label>
               <div className="flex items-center gap-3">
-                {extractInputUrl && (
+                {extractInputUrl ? (
                   <img
                     src={extractInputUrl}
                     alt="Stego to extract"
-                    className="h-16 w-16 object-cover rounded-lg border border-slate-800 bg-slate-950"
+                    className="h-20 w-20 object-cover rounded-lg border border-slate-800 bg-slate-950"
                   />
+                ) : (
+                  <div className="h-20 w-20 rounded-lg border-2 border-dashed border-slate-800 bg-slate-950 flex flex-col items-center justify-center text-slate-600 text-[10px] font-mono">
+                    No Image
+                  </div>
                 )}
-                <button
-                  type="button"
-                  onClick={() => extractFileInputRef.current?.click()}
-                  className="py-2 px-3 rounded-lg border border-slate-700 bg-slate-800 hover:bg-slate-700 text-xs font-medium text-slate-300 flex items-center gap-1.5"
-                >
-                  <Upload className="h-4 w-4" />
-                  Select Stego Image File
-                </button>
+                <div className="space-y-1.5">
+                  <button
+                    type="button"
+                    onClick={() => extractFileInputRef.current?.click()}
+                    className="py-2 px-3 rounded-lg border border-slate-700 bg-slate-800 hover:bg-slate-700 text-xs font-medium text-slate-200 flex items-center gap-1.5 font-mono"
+                  >
+                    <Upload className="h-4 w-4" />
+                    {extractInputUrl ? 'Choose Different Image' : 'Select Stego Image File'}
+                  </button>
+                  <p className="text-[11px] text-slate-500 font-mono">
+                    Supports PNG or losslessly compressed stego formats.
+                  </p>
+                </div>
                 <input
                   ref={extractFileInputRef}
                   type="file"
@@ -407,71 +515,117 @@ export const InteractiveStudioTab: React.FC = () => {
               </div>
             </div>
 
-            {/* Algorithm & Password */}
+            {/* 2. Algorithm & Passphrase */}
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
               <div>
-                <label className="block text-xs font-medium text-slate-300 mb-1">
-                  Expected Algorithm
+                <label className="block text-xs font-semibold text-slate-300 uppercase tracking-wider mb-1 font-mono">
+                  2. Decoder Model
                 </label>
                 <select
                   value={extractAlgorithm}
                   onChange={(e) => setExtractAlgorithm(e.target.value)}
                   className="w-full bg-slate-950 border border-slate-800 rounded-lg p-2 text-xs text-slate-100 font-mono focus:outline-none focus:border-cyan-500"
                 >
-                  <option value="ares_hybrid_inn">ARES-Hybrid-INN (Adaptive Minimum-LSB)</option>
-                  <option value="paper_model_03">Rahman LSB + Magic Matrix</option>
-                  <option value="paper_model_02">Sanjalawe Huffman + Sequential LSB</option>
-                  <option value="paper_model_01">Kanimozhi RNN+Fuzzy Spatial LSB</option>
+                  {ALL_MODEL_ADAPTERS.map((adapter) => (
+                    <option key={adapter.id} value={adapter.id}>
+                      {adapter.name} {adapter.type === 'proposed' ? '(Proposed)' : ''}
+                    </option>
+                  ))}
                 </select>
               </div>
 
               <div>
-                <label className="block text-xs font-medium text-slate-300 mb-1">
-                  Key / Password
+                <label className="block text-xs font-semibold text-slate-300 uppercase tracking-wider mb-1 font-mono">
+                  3. Passphrase
                 </label>
                 <input
-                  type="text"
+                  type="password"
                   value={extractPassword}
                   onChange={(e) => setExtractPassword(e.target.value)}
                   className="w-full bg-slate-950 border border-slate-800 rounded-lg p-2 text-xs text-slate-100 font-mono focus:outline-none focus:border-cyan-500"
+                  placeholder="Enter decryption passphrase..."
                 />
               </div>
+            </div>
+
+            {/* 3. Optional Reference Payload for Exact Verification */}
+            <div>
+              <label className="block text-xs font-semibold text-slate-300 uppercase tracking-wider mb-1 font-mono">
+                Reference Payload (Optional — for exact match verification)
+              </label>
+              <input
+                type="text"
+                value={referencePayload}
+                onChange={(e) => setReferencePayload(e.target.value)}
+                className="w-full bg-slate-950 border border-slate-800 rounded-lg p-2 text-xs text-slate-100 font-mono focus:outline-none focus:border-cyan-500"
+                placeholder="Optional: original payload to check: original_payload == recovered_payload"
+              />
             </div>
 
             <button
               type="button"
               onClick={handleExtract}
               disabled={!extractInputUrl}
-              className={`w-full py-2.5 px-4 rounded-xl text-xs font-semibold flex items-center justify-center gap-2 shadow-md ${
+              className={`w-full py-2.5 px-4 rounded-xl text-xs font-bold font-mono flex items-center justify-center gap-2 shadow-md transition ${
                 !extractInputUrl
                   ? 'bg-slate-800 text-slate-500 cursor-not-allowed'
-                  : 'bg-cyan-600 hover:bg-cyan-500 text-white shadow-cyan-950'
+                  : 'bg-cyan-600 hover:bg-cyan-500 text-slate-950 shadow-cyan-950'
               }`}
             >
               <Unlock className="h-4 w-4" />
-              Decode & Recover Secret Message
+              Execute Decryption Pipeline
             </button>
 
-            {/* Output */}
+            {/* Output Display */}
             {extractedSecret && (
-              <div className="mt-4 p-4 rounded-xl bg-slate-950 border border-slate-800 space-y-2">
+              <div className="mt-4 p-4 rounded-xl bg-slate-950 border border-slate-800 space-y-3">
                 <div className="flex items-center justify-between">
-                  <span className="text-xs font-medium text-slate-400">Recovery Status:</span>
+                  <span className="text-xs font-semibold text-slate-300 font-mono">
+                    Decryption Outcome:
+                  </span>
                   {extractedSecret.success ? (
-                    <span className="flex items-center gap-1 text-xs text-emerald-400 font-semibold">
+                    <span className="flex items-center gap-1 text-xs text-emerald-400 font-bold font-mono">
                       <CheckCircle2 className="h-3.5 w-3.5" />
-                      Extracted Successfully
+                      RECOVERY SUCCESS
                     </span>
                   ) : (
-                    <span className="flex items-center gap-1 text-xs text-rose-400 font-semibold">
+                    <span className="flex items-center gap-1 text-xs text-rose-400 font-bold font-mono">
                       <AlertCircle className="h-3.5 w-3.5" />
-                      Payload Extraction Failed
+                      Payload Recovery: FAILED
                     </span>
                   )}
                 </div>
 
-                <div className="p-3 bg-slate-900 rounded-lg border border-slate-800 font-mono text-xs text-slate-100 break-words">
-                  {extractedSecret.success ? extractedSecret.text : 'Could not decode valid UTF-8 payload header.'}
+                <div className="grid grid-cols-2 sm:grid-cols-3 gap-2 text-xs font-mono">
+                  <div className="bg-slate-900 p-2 rounded border border-slate-800">
+                    <span className="text-[10px] text-slate-500 block">Decoding Time</span>
+                    <span className="text-slate-200 font-bold">{extractedSecret.decodeTimeMs} ms</span>
+                  </div>
+                  <div className="bg-slate-900 p-2 rounded border border-slate-800">
+                    <span className="text-[10px] text-slate-500 block">Payload Size</span>
+                    <span className="text-slate-200 font-bold">{extractedSecret.payloadSize} bytes</span>
+                  </div>
+                  <div className="bg-slate-900 p-2 rounded border border-slate-800">
+                    <span className="text-[10px] text-slate-500 block">Exact Match</span>
+                    <span className={extractedSecret.exactMatch === true ? 'text-emerald-400 font-bold' : extractedSecret.exactMatch === false ? 'text-rose-400 font-bold' : 'text-slate-400'}>
+                      {extractedSecret.exactMatch === true ? 'MATCH (100%)' : extractedSecret.exactMatch === false ? 'MISMATCH' : 'No Reference'}
+                    </span>
+                  </div>
+                </div>
+
+                <div>
+                  <span className="text-[11px] text-slate-400 block mb-1 font-mono">
+                    Recovered Payload:
+                  </span>
+                  <div className="p-3 bg-slate-900 rounded-lg border border-slate-800 font-mono text-xs text-slate-100 break-words max-h-40 overflow-y-auto">
+                    {extractedSecret.success ? (
+                      extractedSecret.text
+                    ) : (
+                      <span className="text-rose-400">
+                        {extractedSecret.error || 'Decryption failed: Unable to extract valid payload header.'}
+                      </span>
+                    )}
+                  </div>
                 </div>
               </div>
             )}
